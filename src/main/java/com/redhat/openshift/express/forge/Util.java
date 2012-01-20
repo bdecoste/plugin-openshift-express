@@ -18,6 +18,7 @@ import org.jboss.forge.shell.ShellPrintWriter;
 import org.jboss.forge.shell.ShellPrompt;
 
 import com.openshift.express.client.InvalidCredentialsOpenShiftException;
+import com.openshift.express.client.NotFoundOpenShiftException;
 import com.openshift.express.internal.client.ApplicationInfo;
 import com.openshift.express.internal.client.EmbeddableCartridgeInfo;
 
@@ -154,6 +155,10 @@ public class Util {
    
    public static String getPassword(ShellPrompt prompt) {
       return prompt.promptSecret("Enter your Red Hat Login password");
+   }
+
+   public static void displayNonExistentDomainError(ShellPrintWriter out, NotFoundOpenShiftException e) {
+      out.println("\nIt looks like you haven't created an OpenShift Express namespace.\nPlease log in to https://openshift.redhat.com to set up your namespace and SSH keys before running this command.\n");
    }
 
    public static void displayCredentialsError(ShellPrintWriter out, InvalidCredentialsOpenShiftException e) {

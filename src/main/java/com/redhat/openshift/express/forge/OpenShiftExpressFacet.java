@@ -26,7 +26,9 @@ import org.jboss.forge.shell.util.NativeSystemCall;
 import com.openshift.express.client.IApplication;
 import com.openshift.express.client.ICartridge;
 import com.openshift.express.client.IOpenShiftService;
+import com.openshift.express.client.IUser;
 import com.openshift.express.client.InvalidCredentialsOpenShiftException;
+import com.openshift.express.client.NotFoundOpenShiftException;
 import com.openshift.express.client.OpenShiftEndpointException;
 import com.openshift.express.internal.client.InternalUser;
 import com.redhat.openshift.express.core.OpenShiftServiceFactory;
@@ -58,12 +60,15 @@ public class OpenShiftExpressFacet extends BaseFacet {
     public boolean install() {
         try {
             return internalInstall();
+        } catch (InvalidCredentialsOpenShiftException e) {
+            Util.displayCredentialsError(out, e);
+            return false;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private boolean internalInstall() throws Exception {       
+    private boolean internalInstall() throws Exception, InvalidCredentialsOpenShiftException {
         
         String name = getName();
         String rhLogin = getRhLogin();
@@ -74,12 +79,21 @@ public class OpenShiftExpressFacet extends BaseFacet {
         configuration.setRhLogin(null);
         String password = Util.getPassword(prompt);
         IOpenShiftService openshift = OpenShiftServiceFactory.create(baseUrl);
+
+        IUser user = new InternalUser(rhLogin, password, openshift);
+
+        // Check for a domain before proceeding
+        try {
+            openshift.getUserInfo(user);
+        } catch (NotFoundOpenShiftException e) {
+            Util.displayNonExistentDomainError(out, e);
+            return false;
+        }
+
+        // Attempt to create the application
         IApplication application = null;
         try {
-           application = openshift.createApplication(name, ICartridge.JBOSSAS_7, new InternalUser(rhLogin, password, openshift));
-        } catch (InvalidCredentialsOpenShiftException e) {
-           Util.displayCredentialsError(out, e);
-           return false;
+           application = openshift.createApplication(name, ICartridge.JBOSSAS_7, user);
         } catch (OpenShiftEndpointException e) {
            ShellMessages.error(out, "OpenShift failed to create the application");
            ShellMessages.error(out, e.getMessage());
