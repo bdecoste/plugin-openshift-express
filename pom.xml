@@ -46,7 +46,7 @@
     <dependency>
        <groupId>com.openshift.express</groupId>
        <artifactId>openshift-java-client</artifactId>
-       <version>1.0.1-SNAPSHOT</version>
+       <version>1.1.1-SNAPSHOT</version>
     </dependency>
   </dependencies>
   <repositories>
